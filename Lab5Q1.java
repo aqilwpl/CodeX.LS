@@ -16,7 +16,7 @@ public class Lab5Q1 {
         System.out.print("Enter the number of students:");
         int n = scanner.nextInt();
         int[] score=new int[n];
-        int[] changes = new int[c];
+        
         int max =0;
         int min=101;
         int total=0;
