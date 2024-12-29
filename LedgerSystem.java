@@ -226,23 +226,120 @@ public class LedgerSystem {
                     
                 
                     case 3:
-                        System.out.println("\n== History ==");
-                        System.out.printf("%-10s%-20s%-20s%-15s%-15s%-15s\n", "No.","Date", "Description", "Debit","Credit","Balance");
-                        for(int i=0; i<count;i++){
-                            System.out.printf("\n%-10d%-20s%-20s", (i+1),CurrentDate, descDebitCredit[0][i]);
-                            if(descDebitCredit[1][i].equals("Debit")){
-                                System.out.printf("%-15.2f",DebitCredit[i]);
-                                System.out.printf("               %-15.2f",CurrentBalance[i]);
-                            }else{
-                                System.out.printf("               %-15.2f",DebitCredit[i]);
-                                System.out.printf("%-15.2f",CurrentBalance[i]);
-                            }
-                            
+                       System.out.println("\n== History ==");
+                       System.out.println("1. Filter\n2. Sort\n3. View All\n4. Back");
+                       System.out.print("\n>");
+                       int historyOption = sc.nextInt();
+                       sc.nextLine();
 
-                        }
-                        System.out.println("\nTotal: "+balance);
-                        break;
-                    
+                       switch (historyOption) {
+                           case 1: // Filter
+                               System.out.println("\n== Filter Options ==");
+                               System.out.println("1. Date Range\n2. Transaction Type\n3. Amount Range");
+                               System.out.print("\n>");
+                               int filterOption = sc.nextInt();
+                               sc.nextLine();
+
+                               switch (filterOption) {
+                                   case 1: // Date Range
+                                       System.out.print("Enter start date (dd-mm-yyyy): ");
+                                       LocalDate startDate = LocalDate.parse(sc.nextLine(), DateTimeFormatter.ofPattern("dd-MM-yyyy"));
+                                       System.out.print("Enter end date (dd-mm-yyyy): ");
+                                       LocalDate endDate = LocalDate.parse(sc.nextLine(), DateTimeFormatter.ofPattern("dd-MM-yyyy"));
+
+                                       System.out.println("\nFiltered Transactions:");
+                                       for (int i = 0; i < count; i++) {
+                                           if (!transactionDates[i].isBefore(startDate) && !transactionDates[i].isAfter(endDate)) {
+                                            printTransaction(i, transactionDates, descDebitCredit, DebitCredit, CurrentBalance);
+                                        }
+                                    }
+                                    break;
+
+                                case 2: // Transaction Type
+                                    System.out.print("Enter transaction type (Debit/Credit): ");
+                                    String type = sc.nextLine();
+
+                                    System.out.println("\nFiltered Transactions:");
+                                    for (int i = 0; i < count; i++) {
+                                        if (descDebitCredit[1][i].equalsIgnoreCase(type)) {
+                                            printTransaction(i, transactionDates, descDebitCredit, DebitCredit, CurrentBalance);
+                                        }
+                                    }
+                                    break;
+
+                                case 3: // Amount Range
+                                    System.out.print("Enter minimum amount: ");
+                                    double minAmount = sc.nextDouble();
+                                    System.out.print("Enter maximum amount: ");
+                                    double maxAmount = sc.nextDouble();
+
+                                    System.out.println("\nFiltered Transactions:");
+                                    for (int i = 0; i < count; i++) {
+                                        if (DebitCredit[i] >= minAmount && DebitCredit[i] <= maxAmount) {
+                                            printTransaction(i, transactionDates, descDebitCredit, DebitCredit, CurrentBalance);
+                                        }
+                                    }
+                                    break;
+
+                                default:
+                                    System.out.println("Invalid filter option.");
+                                    break;
+                            }
+                            break;
+
+                        case 2: // Sort
+                            System.out.println("\n== Sort Options ==");
+                            System.out.println("1. By Date\n2. By Amount");
+                            System.out.print("\n>");
+                            int sortOption = sc.nextInt();
+                            sc.nextLine();
+
+                            switch (sortOption) {
+                                case 1: // By Date
+                                    System.out.println("1. Newest to Oldest\n2. Oldest to Newest");
+                                    System.out.print("\n>");
+                                    int dateOrder = sc.nextInt();
+                                    sc.nextLine();
+                                    sortByDate(transactionDates, descDebitCredit, DebitCredit, CurrentBalance, count, dateOrder == 1);
+                                    System.out.println("\nSorted Transactions:");
+                                    for (int i = 0; i < count; i++) {
+                                        printTransaction(i, transactionDates, descDebitCredit, DebitCredit, CurrentBalance);
+                                    }
+                                    break;
+
+                                case 2: // By Amount
+                                    System.out.println("1. Highest to Lowest\n2. Lowest to Highest");
+                                    System.out.print("\n>");
+                                    int amountOrder = sc.nextInt();
+                                    sc.nextLine();
+                                    sortByAmount(transactionDates, descDebitCredit, DebitCredit, CurrentBalance, count, amountOrder == 1);
+                                    System.out.println("\nSorted Transactions:");
+                                    for (int i = 0; i < count; i++) {
+                                        printTransaction(i, transactionDates, descDebitCredit, DebitCredit, CurrentBalance);
+                                    }
+                                    break;
+
+                                default:
+                                    System.out.println("Invalid sort option.");
+                                    break;
+                            }
+                            break;
+
+                        case 3: // View All
+                            for (int i = 0; i < count; i++) {
+                                printTransaction(i, transactionDates, descDebitCredit, DebitCredit, CurrentBalance);
+                            }
+                            break;
+
+                        case 4:
+                            break;
+
+                        default:
+                            System.out.println("Invalid option.");
+                            break;
+                    }
+                    break;
+
                     case 4:
                         System.out.println("== Savings ==");
                         if(SavingActivated == false){
@@ -305,5 +402,67 @@ public class LedgerSystem {
                 break;
             }   
         }
-    }
+        private static void sortByDate(LocalDate[] dates, String[][] descDebitCredit, Double[] DebitCredit, Double[] CurrentBalance, int count, boolean newestFirst) {
+            for (int i = 0; i < count - 1; i++) {
+                for (int j = 0; j < count - 1 - i; j++) {
+                    boolean condition = newestFirst
+                            ? dates[j].isBefore(dates[j + 1])
+                            : dates[j].isAfter(dates[j + 1]);
+
+                    if (condition) {
+                        // Swap dates
+                        LocalDate tempDate = dates[j];
+                        dates[j] = dates[j + 1];
+                        dates[j + 1] = tempDate;
+
+                        // Swap corresponding descDebitCredit
+                        String[] tempDesc = descDebitCredit[j];
+                        descDebitCredit[j] = descDebitCredit[j + 1];
+                        descDebitCredit[j + 1] = tempDesc;
+
+                        // Swap corresponding DebitCredit
+                        Double tempDebitCredit = DebitCredit[j];
+                        DebitCredit[j] = DebitCredit[j + 1];
+                        DebitCredit[j + 1] = tempDebitCredit;
+
+                        // Swap corresponding CurrentBalance
+                        Double tempCurrentBalance = CurrentBalance[j];
+                        CurrentBalance[j] = CurrentBalance[j + 1];
+                        CurrentBalance[j + 1] = tempCurrentBalance;
+                    }
+                }
+            }
+        }
+
+        private static void sortByAmount(LocalDate[] dates, String[][] descDebitCredit, Double[] DebitCredit, Double[] CurrentBalance, int count, boolean highestFirst) {
+            for (int i = 0; i < count - 1; i++) {
+                for (int j = 0; j < count - 1 - i; j++) {
+                    boolean condition = highestFirst
+                            ? DebitCredit[j] < DebitCredit[j + 1]
+                            : DebitCredit[j] > DebitCredit[j + 1];
+
+                    if (condition) {
+                        // Swap DebitCredit
+                        Double tempDebitCredit = DebitCredit[j];
+                        DebitCredit[j] = DebitCredit[j + 1];
+                        DebitCredit[j + 1] = tempDebitCredit;
+
+                        // Swap corresponding dates
+                        LocalDate tempDate = dates[j];
+                        dates[j] = dates[j + 1];
+                        dates[j + 1] = tempDate;
+
+                        // Swap corresponding descDebitCredit
+                        String[] tempDesc = descDebitCredit[j];
+                        descDebitCredit[j] = descDebitCredit[j + 1];
+                        descDebitCredit[j + 1] = tempDesc;
+
+                        // Swap corresponding CurrentBalance
+                        Double tempCurrentBalance = CurrentBalance[j];
+                        CurrentBalance[j] = CurrentBalance[j + 1];
+                        CurrentBalance[j + 1] = tempCurrentBalance;
+                    }
+                }
+            }
+        }
 }
